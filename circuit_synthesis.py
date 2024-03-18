@@ -23,8 +23,8 @@ def label_f(pref, truth_table):
 class CircuitSynthesis:
 
     @staticmethod
-    def gen_all_conjunctions(circuit: Circuit, gates: List[int]):
-
+    def gen_all_conjunctions(circuit: Circuit, gates: List[int], pref: str):
+        assert '_' not in pref
         n = len(gates)
         if n == 1:
             circuit.make_gate(f"{pref}_0", (gates[0],), Functions.BUFF)
@@ -34,22 +34,23 @@ class CircuitSynthesis:
         assert n > 1, "длина хотя бы 2"
 
         for ind in gates:
-            circuit.make_gate("n" + str(ind), tuple([ind]), Functions.NOT)
+            circuit.make_gate(label_not(pref, ind), tuple([ind]), Functions.NOT)
 
-        circuit.make_gate("y00", (gates[0], gates[1]), Functions.AND)
-        circuit.make_gate("y01", (gates[0], "n" + str(gates[1])), Functions.AND)
-        circuit.make_gate("y10", ("n" + str(gates[0]), gates[1]), Functions.AND)
-        circuit.make_gate("y11", ("n" + str(gates[0]), "n" + str(gates[1])), Functions.AND)
+        circuit.make_gate(f"{pref}_00", (gates[0], gates[1]), Functions.AND)
+        circuit.make_gate(f"{pref}_01", (gates[0], label_not(pref, gates[1])), Functions.AND)
+        circuit.make_gate(f"{pref}_10", (label_not(pref, gates[0]), gates[1]), Functions.AND)
+        circuit.make_gate(f"{pref}_11", (label_not(pref, gates[0]), label_not(pref, gates[1])), Functions.AND)
 
         for i in range(2, n):
             for x in map(lambda prod: ''.join(prod), product("01", repeat=i)):
-                circuit.make_gate("y" + x + "0", ("y" + x, gates[i]), Functions.AND)
-                circuit.make_gate("y" + x + "1", ("y" + x, "n" + str(gates[i])), Functions.AND)
+                circuit.make_gate(f"{pref}_{x}0", (f"{pref}_{x}", gates[i]), Functions.AND)
+                circuit.make_gate(f"{pref}_{x}1", (f"{pref}_{x}", label_not(pref, gates[i])), Functions.AND)
 
     @staticmethod
     def gen_simple_circuit(circuit: Circuit, input_gates: List[int], truth_tables: List[str]):
         n = len(input_gates)
-        CircuitSynthesis.gen_all_conjunctions(circuit, input_gates)
+        pref = "y"
+        CircuitSynthesis.gen_all_conjunctions(circuit, input_gates, pref)
         for j in range(len(truth_tables)):
             truth_table = truth_tables[j]
             assert len(truth_table) == 2 ** n, "таблица истинности и количество входов не соответствуют друг другу"
@@ -63,7 +64,7 @@ class CircuitSynthesis:
                 circuit.tag_gate_as_output("ZERO")
                 continue
             if len(where_ones) == 1:
-                circuit.tag_gate_as_output("y" + str(where_ones[0]))
+                circuit.tag_gate_as_output(f"{pref}_{where_ones[0]}")
                 continue
 
             circuit.make_gate(label_dis(0, j), (label_gate(pref, where_ones[0]), label_gate(pref, where_ones[1])),
