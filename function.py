@@ -21,11 +21,14 @@ class Function:
 
 class Functions:
     NOT = Function("10", "NOT")
+    BUFF = Function("01", "BUFF")
+    ZERO = Function("00", "ZERO")
+    ONE = Function("11", "ONE")
+
     AND = Function("0001", "AND")
     OR = Function("0111", "OR")
     NAND = Function("1110", "NAND")
     NOR = Function("1000", "NOR")
     XOR = Function("0110", "XOR")
     NXOR = Function("1001", "NXOR")
-    ZERO = Function("00", "ZERO")
-    ONE = Function("11", "ONE")
+

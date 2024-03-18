@@ -29,6 +29,7 @@ class Circuit:
             assert gate_id == i
         assert all(self.gates[i].identifier == i for i in range(len(input_labels)))
         self.output_identifiers = list()
+        self.trash_variables_count = 0
 
     def unify_gate(self, gate: Union[str, int]) -> int:
         if isinstance(gate, str):
@@ -63,6 +64,10 @@ class Circuit:
         identifier = len(self.label_to_identifier)
         self.label_to_identifier[label] = identifier
         return identifier
+
+    def gen_trash_label(self) -> str:
+        self.trash_variables_count += 1
+        return f"__trash_{self.trash_variables_count - 1}"
 
     def __str__(self):
         res = []
