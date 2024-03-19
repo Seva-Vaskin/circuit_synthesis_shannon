@@ -28,28 +28,27 @@ class CircuitSynthesisTests(unittest.TestCase):
         self.check_correctness(circuit, truth_tables)
 
     def test_simple_simple_shannen_synthesis(self):
-        self.check_shannen_synthesis(Circuit(["x0", "x1"]), ["1111"], 1)
+        self.check_shannen_synthesis(Circuit(["x0", "x1", "x2"]), ["11110011"], 1)
 
+    def test_simple_s2(self):
+        circuit = Circuit(["x0", "x1", "x2"])
+        CircuitSynthesis.gen_all_functions(circuit, [0, 1, 2], "try")
+        print(circuit)
 
-    # def test_simple_s2(self):
-    #     circuit = Circuit(["x0", "x1", "x2"])
-    #     CircuitSynthesis.gen_all_functions(circuit, [0, 1, 2], "try")
-    #     print(circuit)
+    def test_simple_synthesis(self):
+        self.check_shannen_synthesis(Circuit(["x0", "x1"]), ["0011"], 1)
 
-    # def test_simple_synthesis(self):
-    #     self.check_synthesis(Circuit(["x0", "x1"]), ["0011"])
-    #
-    # def test_synthesis(self):
-    #     self.check_synthesis(Circuit(["x0", "x1", "x2"]), ["00110100"])
-    #
-    # def test_synthesis_all_zeros(self):
-    #     self.check_synthesis(Circuit(["x0", "x1", "x2"]), ["00000000"])
-    #
-    # def test_synthesis_one_one(self):
-    #     self.check_synthesis(Circuit(["x0", "x1", "x2", "x3"]), ["0000010000000000"])
-    #
-    # def test_synthesis_multi(self):
-    #     self.check_synthesis(Circuit(["x0", "x1", "x2"]), ["00110100", "11101111", "01010101"])
+    def test_synthesis(self):
+        self.check_shannen_synthesis(Circuit(["x0", "x1", "x2"]), ["00110100"], 1)
+
+    def test_synthesis_all_zeros(self):
+        self.check_shannen_synthesis(Circuit(["x0", "x1", "x2"]), ["00000000"], 1)
+
+    def test_synthesis_one_one(self):
+        self.check_shannen_synthesis(Circuit(["x0", "x1", "x2", "x3"]), ["0000010000000000"], 2)
+
+    def test_synthesis_multi(self):
+        self.check_shannen_synthesis(Circuit(["x0", "x1", "x2"]), ["00110100", "11101111", "01010101"], 1)
 
 
 if __name__ == '__main__':

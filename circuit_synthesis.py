@@ -109,7 +109,7 @@ class CircuitSynthesis:
             block_len = 2 ** (len(input_labels) - split_count)
             for x in map(lambda xx: ''.join(xx), product("01", repeat=split_count)):
                 int_x = int(x, 2)
-                not_x = ''.join('0' if i == '1' else '0' for i in x)
+                not_x = ''.join('0' if i == '1' else '1' for i in x)
                 block_truth_table = truth_table[block_len * int_x:block_len * (int_x + 1)]
 
                 and_gate_label = circuit.gen_trash_label()
