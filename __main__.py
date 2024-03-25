@@ -18,8 +18,8 @@ def main():
         truth_tables.pop()
     n = int(math.log2(len(truth_tables[0])))
     c = Circuit([f"x{i}" for i in range(n)])
-    k = [0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 5, 5, 5, 5, 5, 5]
-    CircuitSynthesis.shannen_algorithm(c, [i for i in range(n)], n - k[n], truth_tables)
+    # k = [0, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5]
+    CircuitSynthesis.shannen_algorithm(c, [i for i in range(n)], n - int(math.log2(n) - 0.99), truth_tables)
     f.close()
     f2 = open(file_out, "w")
     f2.write(str(c))

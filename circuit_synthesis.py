@@ -20,28 +20,33 @@ def label_f(pref, truth_table):
     return f"{pref}_f_{truth_table}"
 
 
+def label_all_x(pref, ind, truth):
+    return f"{pref}_f_{ind}_{truth}"
+
+
+def label_all_n_x(pref, ind, truth):
+    return f"{pref}_f_n_{ind}_{truth}"
+
+
+def label_neg(pref, ind):
+    return f"{pref}_n_{ind}"
+
+
 class CircuitSynthesis:
 
     @staticmethod
     def gen_all_conjunctions(circuit: Circuit, gates: List[int], pref: str):
         assert '_' not in pref
         n = len(gates)
-        if n == 1:
-            circuit.make_gate(f"{pref}_0", (gates[0],), Functions.BUFF)
-            circuit.make_gate(f"{pref}_1", (gates[0],), Functions.NOT)
-            return
 
-        assert n > 1, "длина хотя бы 2"
+        circuit.create_gate_alias(gates[0], f"{pref}_0")
+        # circuit.make_gate(f"{pref}_0", (gates[0],), Functions.BUFF)
+        circuit.make_gate(f"{pref}_1", (gates[0],), Functions.NOT)
 
         for ind in gates:
-            circuit.make_gate(label_not(pref, ind), tuple([ind]), Functions.NOT)
+            circuit.make_gate(label_not(pref, ind), (ind,), Functions.NOT)
 
-        circuit.make_gate(f"{pref}_00", (gates[0], gates[1]), Functions.AND)
-        circuit.make_gate(f"{pref}_01", (gates[0], label_not(pref, gates[1])), Functions.AND)
-        circuit.make_gate(f"{pref}_10", (label_not(pref, gates[0]), gates[1]), Functions.AND)
-        circuit.make_gate(f"{pref}_11", (label_not(pref, gates[0]), label_not(pref, gates[1])), Functions.AND)
-
-        for i in range(2, n):
+        for i in range(1, n):
             for x in map(lambda prod: ''.join(prod), product("01", repeat=i)):
                 circuit.make_gate(f"{pref}_{x}0", (f"{pref}_{x}", gates[i]), Functions.AND)
                 circuit.make_gate(f"{pref}_{x}1", (f"{pref}_{x}", label_not(pref, gates[i])), Functions.AND)
@@ -78,23 +83,34 @@ class CircuitSynthesis:
     @staticmethod
     def gen_all_functions(circuit: Circuit, input_gates: List[int], pref: str):
         if len(input_gates) == 1:
-            for truth_table, func in [("01", Functions.BUFF), ("10", Functions.NOT), ("00", Functions.ZERO),
-                                      ("11", Functions.ONE)]:
-                circuit.make_gate(label_f(pref, truth_table), tuple([input_gates[0]]), func)
+            for func in [Functions.BUFF, Functions.NOT, Functions.ZERO, Functions.ONE]:
+                label = label_f(pref, func.str_truth_table)
+                if func == Functions.BUFF:
+                    circuit.create_gate_alias(input_gates[0], label)
+                else:
+                    circuit.make_gate(label, (input_gates[0],), func)
         else:
             CircuitSynthesis.gen_all_functions(circuit, input_gates[1:], pref)
+
+            lab_neg = label_neg(pref, input_gates[0])
+            circuit.make_gate(lab_neg, (input_gates[0],), Functions.NOT)
+            for truth_table_0 in map(lambda x: ''.join(x), product("01", repeat=2 ** (len(input_gates) - 1))):
+                circuit.make_gate(label_all_x(pref, input_gates[0], truth_table_0),
+                                  (label_f(pref, truth_table_0), input_gates[0]), Functions.AND)
+                circuit.make_gate(label_all_n_x(pref, input_gates[0], truth_table_0),
+                                  (label_f(pref, truth_table_0), lab_neg), Functions.AND)
 
             for truth_table_0, truth_table_1 in product(
                     map(lambda x: ''.join(x), product("01", repeat=2 ** (len(input_gates) - 1))),
                     repeat=2):
                 truth_table = truth_table_0 + truth_table_1
-                f_0_label, f_1_label, inp_not_label = [circuit.gen_trash_label() for _ in range(3)]
-                circuit.make_gate(f_1_label, (input_gates[0], label_f(pref, truth_table_1)), Functions.AND)
+                # f_0_label, f_1_label, inp_not_label = [circuit.gen_trash_label() for _ in range(3)]
+                # circuit.make_gate(f_1_label, (input_gates[0], label_f(pref, truth_table_1)), Functions.AND)
+                #
+                # circuit.make_gate(inp_not_label, ([input_gates[0]],), Functions.NOT)
+                # circuit.make_gate(f_0_label, (inp_not_label, label_f(pref, truth_table_0)), Functions.AND)
 
-                circuit.make_gate(inp_not_label, tuple([input_gates[0]]), Functions.NOT)
-                circuit.make_gate(f_0_label, (inp_not_label, label_f(pref, truth_table_0)), Functions.AND)
-
-                circuit.make_gate(label_f(pref, truth_table), (f_0_label, f_1_label), Functions.OR)
+                circuit.make_gate(label_f(pref, truth_table), (label_all_n_x(pref, input_gates[0], truth_table_0), label_all_x(pref, input_gates[0], truth_table_1)), Functions.OR)
 
     @staticmethod
     def shannen_algorithm(circuit: Circuit, input_labels: List[int], split_count, truth_tables: List[str]):
@@ -122,5 +138,9 @@ class CircuitSynthesis:
                     prev_label = or_gate
                 else:
                     prev_label = and_gate
-
+            if prev_label is None:
+                circuit.make_gate("ZERO", tuple([input_labels[0]]), Functions.ZERO)
+                circuit.tag_gate_as_output("ZERO")
+                continue
             circuit.tag_gate_as_output(prev_label)
+        circuit = circuit.delete_unused_gates()
